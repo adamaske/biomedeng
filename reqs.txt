@@ -1,0 +1,20 @@
+
+# Jupyterlab
+jupyterlab
+jupyter
+
+# Numerics and Science
+numpy
+pandas
+scipy
+
+# Plotting
+matplotlib
+
+# Machine Learning
+scikit-learn
+tensorflow
+keras-tuner
+
+# --- INSTALL COMMAND ----
+#python -m pip install -r reqs.txt
