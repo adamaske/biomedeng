@@ -16,5 +16,15 @@ scikit-learn
 tensorflow
 keras-tuner
 
+# Paths and Files
+#pathlib
+
+#BCI
+brainflow
+pylsl
+
+#---- VIRTUAL ENV SETUP -----
+#python -m venv ./venv
+
 # --- INSTALL COMMAND ----
 #python -m pip install -r reqs.txt
