@@ -1,9 +1,39 @@
 import json
 import pathlib
-import numpy
+import numpy as np
 import os
+import time
+import mi_info
 
 max_files_per_command = 100
+
+class Label_Count():
+    def __init__(self, label, count):
+        self.label = label
+        self.count = count
+        
+class User_Data:
+    def __init__(self, name,labels, counts):
+        self.name = name
+        self.labels = labels # What commands are avaiable
+                            #["None", "Forward", ...]
+        self.counts = counts # How many of recordings of each command do we have
+                            #[3, 1, ...]
+    
+    def Get_Name(self):
+        return self.name
+    
+    def Get_Labels(self):
+        return self.labels
+    
+    def Get_Counts(self):
+        return self.counts
+    
+        
+    
+def Get_Time_Date(): #this function returns the first avaibale filename for the file 
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    return timestr
 
 def Current_Dir():
     return pathlib.Path(__file__).parent#get current folder
@@ -12,10 +42,20 @@ def Users_Folder():
     return os.path.join(Current_Dir(), "Users")
 
 def User_Folder(user="Adam"):
-    return os.path.join(Users_Folder(), user)
+    path = os.path.join(Users_Folder(), user)
+    if not os.path.isdir(path):
+        os.mkdir(path)
+        print(f"Made directory for {user}!")
+    return path
 
 def User_Label_Folder(user, label):
-    return os.path.join(User_Folder(user), label)
+    path = os.path.join(User_Folder(user), label)
+    
+    if not os.path.isdir(path):
+        os.mkdir(path) 
+        print(f"Made {label} folder for {user}!")
+        
+    return path
 
 def Load_All_Users():
     
@@ -31,19 +71,43 @@ def Load_All_Users():
 
 def Load_User(user="Adam"):
     print(f'Loading User : {user}')
-    
-    user_folder_path = User_Folder(user)#This is the users main folder where all their data is stored
+    user_folder_path = User_Folder(user)#User's folder
 
-    #load all their numpy arrays of fft data
+    labels = mi_info.labels#The labels avaiable
     
-    #load all their json files
+    counts = []#files per label
+    for label in labels:# for every label
+        path = User_Label_Folder(user, label) #folder path to this label
+        
+        count = 0
+        if os.path.isdir(path): #does this folder exist ? 
+            for file in os.listdir(path):#iterate trough every file
+                count += 1#count every file
 
+        counts.append(count)
+            
+        
+    user = User_Data(labels, counts)
+    
+    return user
+
+def Sign_Into_User():
+    print(f"Sign in with username (Case Sensitive)")
+    username = input("Username : ")
+    
+    user = Load_User(username)
+    
+    return user
+   
 def Sort_Users_Files(user):
     print(f"Sorting {user}")
     path = User_Folder(user)
+    
     for label in os.listdir(path):#this should find all the folders with fft data in them, for example left and right if the user only trained those
         command_folder_path = os.path.join(path, label)
+        
         if not os.path.isdir(command_folder_path):#if the file found is not a directroy, contiue the next file
+            print(f"{user} has no {label} directory!")
             continue
         #--- Sorting can be done ---- The folder labeled with this command exists
         #for each numpy array file, there should be a corresponding json file
@@ -55,21 +119,31 @@ def Sort_Users_Files(user):
             npy_files.append(file_name)
             
     
+def Debug_FFT_Data(fft_data):
+    print(f"FFT Data Shape : {fft_data.shape}")
     
 
-def Save_FFT_Data_To_User(user, label, fft_data):#"Forward", numpy array
-    print("Saved")
-    folder_path = User_Label_Folder(user,label)
-    if not os.path.isdir(folder_path):
-        os.mkdir(folder_path)
-        
-    #the folder now definetly exists
+def Save_FFT_Data_To_User(user, label, fft_data):#user : "Adam", "Meisam", etc....
+                                                 #label : "Right", "Left", etc....
+                                                 #fft_dat : numpy array with the fft data
+    print(f"Saving {user}'s {label} FFT-Data") 
     
-    #find where to place the fft data
+   #Sort_Users_Files(user) # THIS IS NOT NEEDED WHEN USING TIMESTAMPS FOR FILENAME
     
-    #resort the already existing files
-    Sort_Users_Files(user)
+    folder_path = User_Label_Folder(user, label)#where to save the data
+    
+    file_name = "fft_" + Get_Time_Date()#files are saved with the current date and time
+    
+    file_path = os.path.join(folder_path, file_name)
+    
+    data = np.array(fft_data)#create numpy array
+    Debug_FFT_Data(data)# check the array shape
+
+    np.save(file_path, data)
+    print(f"Saved {user}'s {label} data at {file_path}")
+    
+    return file_path
     
     
-#Load_User("Aske")
-Load_All_Users()
+    
+#Load_All_Users()

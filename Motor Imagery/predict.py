@@ -4,6 +4,8 @@ from pylsl import resolve_stream
 
 import numpy as np
 import tensorflow as tf
+import mi_info
+
 #---- SORT THE DATA -----
 
 #-- Load EEG Streams --
@@ -24,7 +26,7 @@ model_input = np.array(channel_data).reshape((-1, 16, 60))
 model_output = model.predict(model_input)
 
 
-labels = ["Forward", 'Backward', 'Left', 'Right']
+labels = mi_info.labels
 prediction = 0 
 
 #---- SEND PREDICTION THORUGH UDP -----

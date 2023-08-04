@@ -1,6 +1,6 @@
 #---- CALIBRATION -----
 #aka Train the ML model and save it to disk
-
+import user
 
 import time
 import numpy as np
@@ -10,6 +10,14 @@ import tensorflow as tf
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.python.keras.layers import Conv1D, MaxPooling1D, BatchNormalization
+
+
+#---- LOAD USER ------
+username = "Adam"
+
+user = user.Load_User(username)
+
+
 
 train_X = 0
 train_y = 0
