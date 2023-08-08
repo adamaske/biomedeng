@@ -3,12 +3,16 @@ import mi_info
 import user
 
 from collections import deque
-
+import matplotlib.pyplot as plt
 import time
 import numpy as np
 
+import pylsl 
 from pylsl import StreamInlet
 from pylsl import resolve_stream
+import os
+
+import socket
 #What user is doing the recording ? 
 labels = mi_info.labels
     
@@ -37,15 +41,20 @@ if __name__ == "__main__":
     inlet = StreamInlet(resolve_stream('type', 'EEG')[0])#Resolves the 0th stream of type EEG
     print("Connection Established!")
     
+    inlet.close_stream()
+    #nlet.close_stream()
     
     #--- PROGRAM MAIN LOOP ----
     running = True
     while running:
         
         #---- DISPLAY USER INFO ----
-        # user.Refresh_User(username) refresh user 
         
+        active_user = user.Refresh_User(active_user)
         
+       
+        user.Display_Profile(active_user)
+    
         print("What do you want to train ?")
         
         for index in range(len(labels)):#Display the commands which can be trained. 
@@ -63,55 +72,49 @@ if __name__ == "__main__":
         
         label = labels[label_index]#Find chosen label
         print(f"You choose {label}!")
-    
-        # Command Chosen
-        print(f"Inlet rate {inlet.info().nominal_srate()}")
-        #Do recording
+        
+        #---- COUNTDOWN------
+        countdown_amount = 3
+        for i in range(countdown_amount):
+            print(f"Starting in {countdown_amount - i} seconds....")
+            time.sleep(1)
+        print(f"GO!")  
+        
+        
+        #---- RECORDING ------
         num_samples = mi_info.num_samples
         recording_time = mi_info.recording_time
-        sample_rate = inlet.info().nominal_srate()
+        sample_rate = mi_info.sample_rate
         channels = mi_info.channels
-        
+        num_samples = int(recording_time * sample_rate)
         start_time = time.time()
         
-        channel_data = {} 
-        
-        last_print = time.time()
-        fps_counter = deque(maxlen=150)
-        duration = 5
-        for sample in range(duration):#0 - 625
-            
+        channel_data = [[] for i in range(channels)]
+        for i in range(num_samples):#0 - 625
             for channel in range(channels):
-                data, timestamp = inlet.pull_sample()
-                if channel not in channel_data:
-                    channel_data[channel] = data
-                else:
-                    channel_data[channel].append(data)
-                    
-            fps_counter.append(time.time() - last_print)
-            last_print = time.time()
-            cur_raw_hz = 1/(sum(fps_counter)/len(fps_counter))
-            print(cur_raw_hz)   
-                    
-           
-        
-        array = np.array(channel_data)
-        print(array.shape)
+                sample, timestamp = inlet.pull_sample()
+                channel_data[channel].append(sample)
+          
         elapsed_time = time.time() - start_time
-        print(f"Elapsed time : {elapsed_time} seconds")
+        print(f"Elapsed time : {elapsed_time} seconds")       
+        
+        fft_data = np.array(channel_data)
+        print(f"FFT Data: {fft_data.shape}")
+        print(f"Sample Rate : {int(len(fft_data[0]) / recording_time)}")
+        
+        #TEST - TURNING OFF CHANNEL 4 DURING THE RECORDING!
         
         
-        #Save or Discard ? 
-        
+        #------- KEEP or DISCARD --------- 
         print("Keep or Discard this recording?")
-        answer = input(f" [K] to Keep / [D] for Discard : ")
-        
+        answer = input(f"[K] to Keep / [D] to Discard : ")
         if str(answer).capitalize() == "K":
-            user.Save_FFT_Data_To_User(username, label, data)
+            user.Save_FFT_Data_To_User(username, label, fft_data)
         elif str(answer).capitalize == "D":
             keep = False
-
-        
+        else:
+            print(f"Not recoginzed, the recording will be saved. Navigate to the folder and delete it manually")
+            user.Save_FFT_Data_To_User(username, label, fft_data)
         
     
     print("Shutdown")

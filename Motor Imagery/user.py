@@ -22,13 +22,18 @@ class User_Data:
     
     def Get_Name(self):
         return self.name
-    
+    def Set_Name(self, name):
+        self.name = name
+        
     def Get_Labels(self):
         return self.labels
-    
+    def Set_Labels(self, labels):
+        self.labels = labels
+   
     def Get_Counts(self):
         return self.counts
-    
+    def Set_Counts(self, counts):
+        self.counts = counts
         
     
 def Get_Time_Date(): #this function returns the first avaibale filename for the file 
@@ -69,27 +74,38 @@ def Load_All_Users():
     
     return users
 
-def Load_User(user="Adam"):
-    print(f'Loading User : {user}')
-    user_folder_path = User_Folder(user)#User's folder
-
-    labels = mi_info.labels#The labels avaiable
+def Get_User_Counts(username):
+    labels = mi_info.labels
     
     counts = []#files per label
     for label in labels:# for every label
-        path = User_Label_Folder(user, label) #folder path to this label
-        
+        path = User_Label_Folder(username, label) #folder path to this label
+
         count = 0
         if os.path.isdir(path): #does this folder exist ? 
-            for file in os.listdir(path):#iterate trough every file
-                count += 1#count every file
+            count = len(os.listdir(path))
 
         counts.append(count)
-            
-        
-    user = User_Data(labels, counts)
+    return counts
+
+def Load_User(username="Adam"):
+    print(f'Loading User : {username}')
+    user_folder_path = User_Folder(username)#User's folder
+
+    labels = mi_info.labels#The labels avaiable
     
-    return user
+    counts = Get_User_Counts(username)
+            
+    counts_array = np.array(counts)
+    print(f"Counts numpy array : {counts_array.shape}")
+    print(counts_array)
+    
+    data = User_Data(username, labels, counts)
+    data.Set_Name(username)
+    data.Set_Labels(labels)
+    data.Set_Counts(counts)    
+    
+    return data
 
 def Sign_Into_User():
     print(f"Sign in with username (Case Sensitive)")
@@ -98,7 +114,19 @@ def Sign_Into_User():
     user = Load_User(username)
     
     return user
-   
+     
+def Refresh_User(user):
+    
+    username = user.Get_Name()
+    
+    labels = mi_info.labels
+    user.labels = labels
+    
+    fresh_counts = Get_User_Counts(username)
+    user.counts = fresh_counts
+    
+    return user
+     
 def Sort_Users_Files(user):
     print(f"Sorting {user}")
     path = User_Folder(user)
@@ -144,6 +172,23 @@ def Save_FFT_Data_To_User(user, label, fft_data):#user : "Adam", "Meisam", etc..
     
     return file_path
     
+def Display_Profile(user):
     
+    username = user.Get_Name()
+    labels = user.Get_Labels()
+    counts = user.Get_Counts()
     
+    print(f"Motor Imagery Profile : {username}")
+    print("------------------------------------")
+    for i in range(len(labels)):
+        label = labels[i]
+        count = counts[i]
+        print(f"{label} : {count}")
+    print("------------------------------------")
+
+def Get_User_FFT_Data(user):
+    
+    return 0 
+    
+ 
 #Load_All_Users()
