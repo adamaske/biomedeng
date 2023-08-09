@@ -188,7 +188,65 @@ def Display_Profile(user):
 
 def Get_User_FFT_Data(user):
     
-    return 0 
+    username = user.Get_Name()
     
+    
+    labels = mi_info.labels
+    
+    counts = user.Get_Counts()
+    
+    arrays = [[] for i in range(len(labels))]
+    for i in range(len(labels)):
+        label = labels[i]
+        
+        path = User_Label_Folder(username, label)
+        
+        for file in os.listdir(path):
+            data = np.load(os.path.join(path, file))
+            arrays[i].append(data)
+    
+    #combined_array = np.empty((len(mi_info.labels), mi_info.channels, ), dtype=np.float32)
+    
+    for i in range(len(labels)):
+        label = labels[i]
+        array = arrays[i]
+        
+        print(f"Label : {label}")
+        print(f"Count : {len(array)}")
+        
+        sample_count = 0
+        for sample in array:
+            for channel in sample:
+                sample_count += len(channel)
+            
+        print(f"sample_count : {sample_count}")
+        # Create an empty array to hold the concatenated data
+        combined_array = np.empty((mi_info.channels, sample_count, mi_info.max_fft_hz), dtype=np.float32)
+        
+        #--- put all samples into combined array ---
+        s = 0
+        c = 0
+        index = 0
+        for sample in array:
+            index = 0
+            for channel in range(mi_info.channels):
+                for k in range(len(sample[channel])):
+                    combined_array[channel][index] = sample[channel][k]
+                    index += 1
+                    print(f"s : {s}, c : {c}, k : {k}, i : {index}")
+                c += 1
+            s += 1
+                
+                
+        
+        
+        #-- completed combined_array ---
+        print(f"combined_array : {combined_array.shape}")
+            
+    return 
+    
+def filter_fft(data):
+        
+    return 0
  
 #Load_All_Users()

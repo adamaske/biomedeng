@@ -26,8 +26,7 @@ def Record_Single():
     
     return data
 
-if __name__ == "__main__":
-    
+def Run():
     print(f"Welcome to Motor Imagery recording!")
     
     #--- SIGN INTO USER ------
@@ -41,7 +40,6 @@ if __name__ == "__main__":
     inlet = StreamInlet(resolve_stream('type', 'EEG')[0])#Resolves the 0th stream of type EEG
     print("Connection Established!")
     
-    inlet.close_stream()
     #nlet.close_stream()
     
     #--- PROGRAM MAIN LOOP ----
@@ -49,7 +47,6 @@ if __name__ == "__main__":
     while running:
         
         #---- DISPLAY USER INFO ----
-        
         active_user = user.Refresh_User(active_user)
         
        
@@ -84,27 +81,26 @@ if __name__ == "__main__":
         #---- RECORDING ------
         num_samples = mi_info.num_samples
         recording_time = mi_info.recording_time
-        sample_rate = mi_info.sample_rate
+        sample_rate = inlet.info().nominal_srate()#mi_info.sample_rate
         channels = mi_info.channels
         num_samples = int(recording_time * sample_rate)
         start_time = time.time()
         
+        print(f"Flushed samples : {inlet.flush()}") # -- VERY IMPORTANT --
         channel_data = [[] for i in range(channels)]
-        for i in range(num_samples):#0 - 625
+        while time.time() - start_time < recording_time:
             for channel in range(channels):
                 sample, timestamp = inlet.pull_sample()
                 channel_data[channel].append(sample)
-          
+                
+       
         elapsed_time = time.time() - start_time
         print(f"Elapsed time : {elapsed_time} seconds")       
         
         fft_data = np.array(channel_data)
         print(f"FFT Data: {fft_data.shape}")
         print(f"Sample Rate : {int(len(fft_data[0]) / recording_time)}")
-        
-        #TEST - TURNING OFF CHANNEL 4 DURING THE RECORDING!
-        
-        
+   
         #------- KEEP or DISCARD --------- 
         print("Keep or Discard this recording?")
         answer = input(f"[K] to Keep / [D] to Discard : ")
@@ -115,7 +111,11 @@ if __name__ == "__main__":
         else:
             print(f"Not recoginzed, the recording will be saved. Navigate to the folder and delete it manually")
             user.Save_FFT_Data_To_User(username, label, fft_data)
-        
+       
     
+    
+    
+if __name__ == "__main__":
+    Run()   
     print("Shutdown")
     exit()

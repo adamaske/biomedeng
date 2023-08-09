@@ -5,20 +5,30 @@ import user
 import time
 import numpy as np
 
-import tensorflow as tf
-
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Dropout, Activation, Flatten
-from tensorflow.python.keras.layers import Conv1D, MaxPooling1D, BatchNormalization
+#import tensorflow as tf
+#
+#from tensorflow.python.keras.models import Sequential
+#from tensorflow.python.keras.layers import Dense, Dropout, Activation, Flatten
+#from tensorflow.python.keras.layers import Conv1D, MaxPooling1D, BatchNormalization
 
 
 #---- LOAD USER ------
 username = "Adam"
 
-user = user.Load_User(username)
+active_user = user.Load_User(username)
+
+#--- LOAD ALL FFT DATA FOR USER ----
+fft_data = user.Get_User_FFT_Data(active_user)
+
+exit()
+#---- SEGMENTING -------
+
+#The data needs to be sliced up into segments which somewhat overlap
 
 
 
+
+#---- SETUP ----
 train_X = 0
 train_y = 0
 test_X = 0
