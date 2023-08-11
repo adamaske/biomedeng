@@ -89,7 +89,8 @@ def Get_User_Counts(username):
     return counts
 
 def Load_User(username="Adam"):
-    print(f'Loading User : {username}')
+    
+    
     user_folder_path = User_Folder(username)#User's folder
 
     labels = mi_info.labels#The labels avaiable
@@ -97,14 +98,13 @@ def Load_User(username="Adam"):
     counts = Get_User_Counts(username)
             
     counts_array = np.array(counts)
-    print(f"Counts numpy array : {counts_array.shape}")
-    print(counts_array)
     
     data = User_Data(username, labels, counts)
     data.Set_Name(username)
     data.Set_Labels(labels)
     data.Set_Counts(counts)    
     
+    print(f'Loaded User : {username}')
     return data
 
 def Sign_Into_User():
@@ -112,6 +112,9 @@ def Sign_Into_User():
     username = input("Username : ")
     
     user = Load_User(username)
+    
+    print("Signed In")
+    Display_Profile(user)
     
     return user
      
@@ -185,16 +188,18 @@ def Display_Profile(user):
         count = counts[i]
         print(f"{label} : {count}")
     print("------------------------------------")
+    print()
 
 def Get_User_FFT_Data(user):
     
     username = user.Get_Name()
-    
-    
+
     labels = mi_info.labels
     
     counts = user.Get_Counts()
-    
+    print("------------------------------------")
+    print(f"Loading {username}'s FFT data : ")
+    # --- LOAD ALL NUMPY ARRAYS FROM FILE -----
     arrays = [[] for i in range(len(labels))]
     for i in range(len(labels)):
         label = labels[i]
@@ -204,46 +209,29 @@ def Get_User_FFT_Data(user):
         for file in os.listdir(path):
             data = np.load(os.path.join(path, file))
             arrays[i].append(data)
-    
-    #combined_array = np.empty((len(mi_info.labels), mi_info.channels, ), dtype=np.float32)
+   
+   
+   # --- SORT FILES INTO SINGLE ARRAY ----
+    labels_data = [[] for i in range(len(mi_info.labels))]#
     
     for i in range(len(labels)):
         label = labels[i]
         array = arrays[i]
         
-        print(f"Label : {label}")
-        print(f"Count : {len(array)}")
+        label_data = np.empty((0, mi_info.channels, mi_info.max_fft_hz))
+        for recording in array:
+            #recording_data = recording.reshape((1, len(recording), mi_info.channels, mi_info.max_fft_hz))
+            for sample in recording:
+                sample_data = sample.reshape((1, mi_info.channels, mi_info.max_fft_hz))
+                label_data = np.vstack((label_data, sample_data))
+      
+        print(f"Label : {label}, Count : {len(array)}, Shape : {label_data.shape}")
         
-        sample_count = 0
-        for sample in array:
-            for channel in sample:
-                sample_count += len(channel)
-            
-        print(f"sample_count : {sample_count}")
-        # Create an empty array to hold the concatenated data
-        combined_array = np.empty((mi_info.channels, sample_count, mi_info.max_fft_hz), dtype=np.float32)
-        
-        #--- put all samples into combined array ---
-        s = 0
-        c = 0
-        index = 0
-        for sample in array:
-            index = 0
-            for channel in range(mi_info.channels):
-                for k in range(len(sample[channel])):
-                    combined_array[channel][index] = sample[channel][k]
-                    index += 1
-                    print(f"s : {s}, c : {c}, k : {k}, i : {index}")
-                c += 1
-            s += 1
-                
-                
-        
-        
-        #-- completed combined_array ---
-        print(f"combined_array : {combined_array.shape}")
-            
-    return 
+        labels_data[i] = label_data
+    
+    print("------------------------------------")
+    print()
+    return labels_data
     
 def filter_fft(data):
         

@@ -9,4 +9,4 @@ num_samples = sample_rate * recording_time
 
 channels = 16
 
-max_fft_hz = 125
+max_fft_hz = 60

@@ -85,14 +85,21 @@ def Run():
         channels = mi_info.channels
         num_samples = int(recording_time * sample_rate)
         start_time = time.time()
+        inlet.flush()
+        #print(f"Flushed samples : {}") # -- VERY IMPORTANT --
+
+        channel_data = np.empty((0, mi_info.channels, mi_info.max_fft_hz))
         
-        print(f"Flushed samples : {inlet.flush()}") # -- VERY IMPORTANT --
-        channel_data = [[] for i in range(channels)]
         while time.time() - start_time < recording_time:
+            sample_data = np.empty((mi_info.channels, mi_info.max_fft_hz))
             for channel in range(channels):
                 sample, timestamp = inlet.pull_sample()
-                channel_data[channel].append(sample)
+                sample_array = np.array(sample[:mi_info.max_fft_hz])
                 
+                sample_data[channel] = sample_array
+                
+            sample_data = sample_data.reshape((1, mi_info.channels, mi_info.max_fft_hz))
+            channel_data = np.vstack((channel_data, sample_data))
        
         elapsed_time = time.time() - start_time
         print(f"Elapsed time : {elapsed_time} seconds")       
