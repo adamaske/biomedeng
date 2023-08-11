@@ -237,4 +237,21 @@ def filter_fft(data):
         
     return 0
  
+def Save_Model(user, model):
+    model = 0
+    
+
+def Load_Model(user, index):
+    k =0
+
+def Save_Model(user, model):
+    
+    models_path = os.path.join(pathlib.Path(__file__).parent, "Models")
+    
+
+def Get_User_Models(user):
+    
+    username = user.Get_Name()
+    
+      
 #Load_All_Users()

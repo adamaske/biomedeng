@@ -1,7 +1,8 @@
 #---- CALIBRATION -----
 #aka Train the ML model and save it to disk
 import user
-
+import os
+import pathlib
 import time
 import numpy as np
 import mi_info
@@ -30,7 +31,7 @@ fft_data = user.Get_User_FFT_Data(active_user)
 #The data needs to be sliced up into segments which somewhat overlap
 #Get all right data
 label_ids = np.array((0,1,2,3,4))
-active_labels= np.array((0, 1)) #---_ DEFINES WHAT LABELS WILL BE TRAINED ON. 0 = neutral, 1 = forward, etc...
+active_labels= np.array((0, 1, 2, 3)) #---_ DEFINES WHAT LABELS WILL BE TRAINED ON. 0 = neutral, 1 = forward, etc...
 
 
 segment_length = 50#how many samples does each contain
@@ -82,59 +83,23 @@ model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=
 # Print model summary
 model.summary()
 
+loss, acc = model.evaluate(x_val, y_val, verbose=2)
+print("Untrained model, accuracy: {:5.2f}%".format(100 * acc))
+
 model.fit(x_train, y_train, batch_size=16,epochs=100, verbose=0, validation_data=(x_val, y_val))
 
-acc = model.evaluate(x_val, y_val)
-print("Loss:", acc[0], " Accuracy:", acc[1])
+# Re-evaluate the model
+loss, acc = model.evaluate(x_val, y_val, verbose=2)
+print("Restored model, accuracy: {:5.2f}%".format(100 * acc))
 
 pred = model.predict(x_val)
 pred_y = pred.argmax(axis=-1)
-cm = confusion_matrix(y_val, pred_y)
-print(cm)
-exit()
-epochs = 10
-batch_size = 32
-for epoch in range(epochs):
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=1, validation_data=(x_val, y_val))
-    #score = model.evaluate(x_val, y_val, batch_size=batch_size)
-    #print(score)
-    #MODEL_NAME = f"new_models/{round(score[1]*100,2)}-acc-64x3-batch-norm-{epoch}epoch-{int(time.time())}-loss-{round(score[0],2)}.model"
-    #model.save(MODEL_NAME)
+conf_matrix = confusion_matrix(y_val, pred_y)
+print(f"conf_matrix :")
+print(conf_matrix)
 
-prediction = model.predict(x_val) 
-prediction = [0 if val < 0.5 else 1 for val in prediction]
-accuracy = accuracy_score(y_val, prediction)
-print(f"accuracy : {accuracy}")
-exit()
-model = Sequential()
-
-model.add(Conv2D(64, (3), input_shape=x_train.shape))
-model.add(Activation('relu'))
-
-model.add(Conv2D(64, (2)))
-model.add(Activation('relu'))
-model.add(MaxPooling1D(pool_size=(3)))
-
-model.add(Conv1D(64, (2)))
-model.add(Activation('relu'))
-model.add(MaxPooling1D(pool_size=(2)))
-
-model.add(Flatten())
-
-model.add(Dense(512))
-
-model.add(Dense(3))
-model.add(Activation('softmax'))
-
-model.compile(loss='categorical_crossentropy',
-              optimizer='adam',
-              metrics=['accuracy'])
-
-epochs = 10
-batch_size = 32
-for epoch in range(epochs):
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=1, validation_data=(x_val, y_val))
-    score = model.evaluate(x_val, y_val, batch_size=batch_size)
-    #print(score)
-    MODEL_NAME = f"new_models/{round(score[1]*100,2)}-acc-64x3-batch-norm-{epoch}epoch-{int(time.time())}-loss-{round(score[0],2)}.model"
-    model.save(MODEL_NAME)
+#---- SAVE MODEL -----
+#models_path = os.path.join(pathlib.Path(__file__).parent, "Models")
+#model_name = username + "--" + user.Get_Time_Date()
+#user_models_path = #os.path.join(models_path, model_name)
+#model.save(user_models_path)
