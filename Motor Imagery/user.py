@@ -4,6 +4,7 @@ import numpy as np
 import os
 import time
 import mi_info
+import tensorflow as tf
 
 max_files_per_command = 100
 
@@ -200,6 +201,7 @@ def Get_User_FFT_Data(user):
     print("------------------------------------")
     print(f"Loading {username}'s FFT data : ")
     # --- LOAD ALL NUMPY ARRAYS FROM FILE -----
+    
     arrays = [[] for i in range(len(labels))]
     for i in range(len(labels)):
         label = labels[i]
@@ -232,24 +234,60 @@ def Get_User_FFT_Data(user):
     print("------------------------------------")
     print()
     return labels_data
-    
-def filter_fft(data):
+
+def Get_Models_Path():
+    path =  os.path.join(pathlib.Path(__file__).parent, "Models")
+    if not os.path.isdir(path):
+        os.mkdir(path)
+    return path
+
+def Get_User_Models_Path(username):
+
+    models_path = Get_Models_Path()
+    user_models_path = os.path.join(models_path, username)
+    if not os.path.isdir(user_models_path):
+        os.mkdir(user_models_path)
         
-    return 0
- 
-def Save_Model(user, model):
-    model = 0
+    return user_models_path
     
-
 def Load_Model(user, index):
-    k =0
-
+    print(f"Loading {user.Get_Name()}'s Model_{index}")
+    user_models_path = Get_User_Models_Path(user.Get_Name())
+    
+    models = os.listdir(user_models_path)
+    num_models = len(models)
+    if num_models <= 0:
+        print(f"No models found...")
+        return 0
+    
+    print(f"Found {num_models} models...")
+    
+    if num_models < index:
+        print(f"Index is larger than count")
+        return 0
+    
+    model_path = os.path.join(user_models_path, models[index])
+    model = tf.keras.models.load_model(model_path)
+    print(f"Loaded Model_{index} : {model_path}")
+    return model
+    
 def Save_Model(user, model):
     
-    models_path = os.path.join(pathlib.Path(__file__).parent, "Models")
+    user_models_path = Get_User_Models_Path(user.Get_Name())
+    #-- FIND INDEX ----
+    size = 0
+    for i in os.listdir(user_models_path):
+        size += 1
     
+    model_name = "Model_" + str(size)
+    
+    model_path = os.path.join(user_models_path, str(model_name))
+    model.save(model_path)
+    print(f"Model saved : {model_path}")
+    
+    return model_path
 
-def Get_User_Models(user):
+def Load_User_Models(user):
     
     username = user.Get_Name()
     
