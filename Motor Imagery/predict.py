@@ -44,7 +44,6 @@ class Predictor:
         
         self.models = []
         self.inlet = 0
-        
     
     def Setup(self):
         print(f"Predictor : Setup")
@@ -66,13 +65,15 @@ class Predictor:
 
         print(f"Predictor : Setup Complete")
         
-     
     #---- SEND PREDICTION THORUGH UDP -----
     def Send_Prediction_UDP(self, prediction):
-        print(f"prediction : {prediction} , {mi_info.labels[mi_info.active_labels[int(prediction)]]}")
-        #MESSAGE = mi_info.labels[prediction].encode('utf-8')
-
-        #self.socket.sendto(MESSAGE, (self.UDP_IP, self.UDP_PORT))      
+        prediction = int(prediction)
+        label_prediction = mi_info.labels[prediction]
+        
+        print(f"prediction : {prediction} , {label_prediction}")   
+             
+        MESSAGE = str(label_prediction).encode('utf-8')
+        self.socket.sendto(MESSAGE, (self.UDP_IP, self.UDP_PORT))      
           
     def Record(self):
         
@@ -120,15 +121,6 @@ class Predictor:
         #pred_y = pred.argmax(axis=-1)
         #cm = confusion_matrix(y_val, pred_y)
         #print(cm)  
-        
-
-       
-    
-
- 
-    
-
-    
    
 if __name__ == '__main__':
     
