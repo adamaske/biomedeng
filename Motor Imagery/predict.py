@@ -78,7 +78,7 @@ class Predictor:
     def Record(self):
         
         print(f"Predictor : Recording started...")
-        recording_time = 30
+        recording_time = 60
         start_time = time.time()
         self.inlet.flush()
         while time.time() - start_time < recording_time:
