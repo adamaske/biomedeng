@@ -90,8 +90,6 @@ def Get_User_Counts(username):
     return counts
 
 def Load_User(username="Adam"):
-    
-    
     user_folder_path = User_Folder(username)#User's folder
 
     labels = mi_info.labels#The labels avaiable
