@@ -16,7 +16,7 @@ import tensorflow as tf
 #from tensorflow.python.keras.layers import Dense, Dropout, Activation, Flatten
 #from tensorflow.python.keras.layers import Conv1D, MaxPooling1D#, BatchNormalization
 
-
+    
 #---- LOAD USER ------
 username = "Adam"
 

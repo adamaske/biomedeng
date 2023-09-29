@@ -1,13 +1,19 @@
+# Networking
+serial
+
 
 # Jupyterlab
+ipykernel
 jupyterlab
 jupyter
+jupyterlab-urdf
 
 # Numerics and Science
 numpy
 pandas
 scipy
 sympy
+
 
 # Plotting
 matplotlib
@@ -23,6 +29,11 @@ keras-tuner
 #BCI
 brainflow
 pylsl
+
+pyserial
+
+#Robot
+
 
 #---- VIRTUAL ENV SETUP -----
 #python -m venv ./venv
