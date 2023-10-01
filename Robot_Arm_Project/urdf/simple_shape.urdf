@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<robot name="bot">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0 0 0"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="torso">
+    <visual>
+      <geometry>
+        <box size="0.6 0.3 0.1"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_link_torso" type="continuous">
+    <parent link="base_link" />
+    <child link="torso" />
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="left_wheel_frontside">
+    <visual>
+      <geometry>
+        <cylinder radius="0.04" length="0.05" />
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_link_left_wheel_frontside" type="continuous">
+    <parent link="base_link" />
+    <child link="left_wheel_frontside" />
+    <origin xyz="0.2 0.2 -0.05" rpy="1.570796 0 0"/>
+  </joint>
+
+  <!-- 
+      ...
+   -->
+</robot>

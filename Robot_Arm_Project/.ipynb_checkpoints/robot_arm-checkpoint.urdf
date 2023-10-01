@@ -1,0 +1,12 @@
+<arg name="d1" default="10"/>
+<property name="d_prop" value="$(arg d1)"
+
+<robot name="myfirst">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="$(d1)" radius="0.2"/>
+      </geometry>
+    </visual>
+  </link>
+</robot>

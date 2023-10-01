@@ -1,9 +1,9 @@
-<robot name="myfirst">
-      <link name="base_link">
-        <visual>
-          <geometry>
-            <cylinder length="0.6" radius="0.2"/>
-          </geometry>
-        </visual>
-   </link>
- </robot>
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xarco" name="robot_arm">
+
+  <xacro:include filename="example_include.xarco"/>
+
+  <xacro:property name="radius" value="0.04"/>
+
+</robot>

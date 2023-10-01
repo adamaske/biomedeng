@@ -3,7 +3,7 @@ serial
 
 
 # Jupyterlab
-ipykernel
+
 jupyterlab
 jupyter
 jupyterlab-urdf
@@ -30,8 +30,9 @@ keras-tuner
 brainflow
 pylsl
 
+#Python
 pyserial
-
+ipykernel
 #Robot
 
 
