@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <robot xmlns:xacro="http://www.ros.org/wiki/xarco" name="robot_arm">
-
+  <!-- ACIT Biomedical Engineering Robot Arm Project H2023-->
   <xacro:include filename="example_include.xarco"/>
 
   <xacro:property name="radius" value="0.04"/>

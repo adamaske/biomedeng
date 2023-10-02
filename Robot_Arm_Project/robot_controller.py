@@ -1,22 +1,19 @@
-from serial import Serial
-import time
+import numpy as np
 
-arduino = Serial(port='COM8', baudrate=115200, timeout=.1) 
 
-def sleep():
-    time.sleep(0.05)
-def write_read(x):
-    arduino.write(bytes(x, 'utf-8'))
-    sleep()
-    data = arduino.readline()
-    
-    return data
+t0 = 0
+t1 = 0
+t2 = 0
+t3 = 0
+t4 = 0
 
-while True:
-    num = input("Enter a number : ")    # taking input from user
+d0 = 7.15
+d1 = 12.5
+d2 = 12.5
+d3 = 6.0
+d4 = 13.2
     
-    value = write_read(num)
-    
-    print("value")
+def RotationMatrix(axis, theta):
     
     
+    return;    
