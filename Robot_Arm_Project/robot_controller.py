@@ -66,30 +66,57 @@ class Brain():
         self.m_x= np.array((-10, 7, 8))
         
         self.m_rotation_axis = Axis.Y
-        self.m_theta = 90
+        self.m_theta = 0
     def Brain_Rotation_Matrix(self):
-        matrix = RotationMatrix(self.m_rotation_axis, self.m_thtea)
+        matrix = RotationMatrix(self.m_rotation_axis, self.m_theta)
         return matrix
     def Info(self):
         print(f"Brain Position : {self.m_pos}")
-        
+    
+class Joint():
+    def __init__(self, axis):
+        self.m_axis = axis   
 class Robot():
     def __init__(self):
         self.m_pos = np.array((0,0,0))
+        
+        self.m_joints = []
+        self.m_joints.append(Joint(Axis.Z))
+        self.m_joints.append(Joint(Axis.Y))
+        self.m_joints.append(Joint(Axis.Y))
+        self.m_joints.append(Joint(Axis.Y))
+        self.m_joints.append(Joint(Axis.Z))
+        
         return
-    
+
     def Pose(self, orientation, location):
         
+        _t0 = 0
+        _t1 = 0
+        _t2 = 0
+        _t3 = 0
+        _t4 = 0
+        _t0 = 0
+        T1 = RotationMatrix(Axis.Z, _t0)
         print(orientation)
         print(location)
         
+        
+        
+    
+    
     
 if __name__ == "__main__":
        
     brain = Brain()
     robot = Robot()
+    target_brain_space = TranslationMatrix(0, 0, 1)
+    print(target_brain_space)
+    target_robot_space = brain.Brain_Rotation_Matrix() * target_brain_space
+    
+    print(target_robot_space)
     
     brain_target_robot_space = np.array((0,1,1))
 
-    robot.Pose(0, brain_target_robot_space)
+    #robot.Pose(0, brain_target_robot_space)
     
