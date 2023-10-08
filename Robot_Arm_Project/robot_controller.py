@@ -146,9 +146,10 @@ class Robot():
         
         return
     
-    def Pose_Brain():
+    def Pose(self, orientation, location):
         
-        print("ok")
+        print(orientation)
+        print(location)
         
     
 if __name__ == "__main__":
