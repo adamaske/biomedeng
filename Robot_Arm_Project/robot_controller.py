@@ -146,10 +146,9 @@ class Robot():
         
         return
     
-    def Pose(self, orientation, location):
+    def Pose_Brain():
         
-        print(orientation)
-        print(location)
+        print("ok")
         
     
 if __name__ == "__main__":
@@ -175,7 +174,7 @@ if __name__ == "__main__":
     #print("k_target_robot_space : ")
     #print(k_target_robot_space)
 
-    robot.Set_Thetas(t0=0, t1=0, t2=0, t3=0, t4=00)
+    robot.Set_Thetas(t0=0, t1=34, t2=-40, t3=24, t4=34)
     
     robot.Pose(0, k_target_robot_space)
     
