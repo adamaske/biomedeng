@@ -34,7 +34,11 @@ pylsl
 pyserial
 ipykernel
 #Robot
+mdh
+pybotics
 
+osc4py3
+python-osc
 
 #---- VIRTUAL ENV SETUP -----
 #python -m venv ./venv

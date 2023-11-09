@@ -1,0 +1,51 @@
+from pythonosc.osc_server import AsyncIOOSCUDPServer
+from pythonosc.dispatcher import Dispatcher
+import asyncio
+class Handler():
+     def __init__(self):
+          x = 0
+     def filter_handler(object ,address, *args):
+          print(f"{address} : {args}")
+
+handler = Handler()
+dispatcher = Dispatcher()
+dispatcher.map("/robotsim/pose", handler.filter_handler)
+
+ip = "127.0.0.1"
+port = 7800
+time = 30
+async def loop():
+     for i in range(time):
+          print(f"Loop {i}")
+          
+          await asyncio.sleep(1)
+          
+async def init_main():
+     server = AsyncIOOSCUDPServer((ip, port), dispatcher, asyncio.get_event_loop())
+     transport, protocol = await server.create_serve_endpoint()
+     
+     await loop()
+     
+     transport.close()
+     
+asyncio.run(init_main())
+#from pythonosc.dispatcher import Dispatcher
+#from pythonosc import osc_server
+#
+#
+#def test():
+#     print("GOT MESSAGE")
+#     
+#if __name__ == "__main__":
+#    
+#    ## SETUP OSC RECIEVING
+#    dispatcher = Dispatcher()
+#    dispatcher.map("/robotsim/base", test)
+#    dispatcher.map("/robotsim/shoulder", test)
+#    dispatcher.map("/robotsim/elbow", test)
+#    dispatcher.map("/robotsim/wrist", test)
+#    dispatcher.map("/robotsim/effector", test)
+#    
+#    server = osc_server.ThreadingOSCUDPServer(("127.0.0.1", 7800), dispatcher)
+#    server.serve_forever()
+#    
