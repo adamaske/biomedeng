@@ -277,14 +277,15 @@ class Arduino_Controller():
         if self.fake:
             print(f"Sent fake : {msg}")
             return
+        
         self.active_port.write(bytes(msg, 'utf-8'))
 
     def Read(self):
         if self.fake:
             print(f"read fake msg")
             return "fake_msg"
+        
         data = self.active_port.readline()
-
         return data
 
 class Server():
@@ -295,6 +296,7 @@ class Server():
         self.server = None
         self.robot = None
         self.arduino = None
+        self.transport = None
     async def run(self):
         dispatcher = Dispatcher()
         dispatcher.map("/robotsim/pose", self.pose_robot)
@@ -303,15 +305,15 @@ class Server():
         self.server
         transport, protocol = await self.server.create_serve_endpoint()
         print(f"OSC Server started.")
-        
-        await self.listen_loop(120)
+        self.transport = transport
+        await self.listen_loop(600)
         
         transport.close()
         print(f"OSC Server closed.")
         
     async def listen_loop(self, run_time):
         for i in range(run_time):
-            print(f"Loop {i}")
+            #print(f"Loop {i}")
           
             await asyncio.sleep(1)
             
@@ -382,7 +384,9 @@ if __name__ == "__main__":
         
         x = int(input("Choose command index : "))
         if x < 0 or x > len(commands):
-            print("Not recongnized")
+            print("Not recongnized, exiting!")
+            server.transport.close()
+            exit()
             break
         
         command = commands[x-1]
