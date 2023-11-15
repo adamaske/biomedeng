@@ -17,16 +17,12 @@ import serial.tools.list_ports
 from serial import Serial
 from serial import SerialException
 
-from pythonosc.osc_server import AsyncIOOSCUDPServer
-from pythonosc.dispatcher import Dispatcher
-import asyncio
+from threading import Thread
 
 import time
-t0 = 0
-t1 = 0
-t2 = 0
-t3 = 0
-t4 = 0
+
+from pythonosc.osc_server import BlockingOSCUDPServer
+from pythonosc.dispatcher import Dispatcher
 
 d0 = 7.15
 d1 = 12.5
@@ -34,15 +30,17 @@ d2 = 12.5
 d3 = 6.0
 d4 = 13.2
 
+msg_queue = []
+
 class Brain():
     def __init__(self):
     
         self.m_global_location  = np.array((40, 0, 20))
         self.m_rotation_axis = Axis.Y
-        self.m_theta = 0
+        self.m_theta = -90
+        self.m_target= np.array((10, 0, 0)) #(X=-2.958097,Y=4.203199,Z=2.500000)
+        self.m_entry= np.array((20, 0, 0))#(X=-5.311189,Y=8.007011,Z=5.705144)
         
-        self.m_target= np.array((-6, 3, 4))
-        self.m_entry= np.array((-8, 5, 6))
         self.m_x= np.array((-10, 7, 8))
         
       
@@ -80,7 +78,8 @@ class Link():
         return self.m_dh_param
         
 class Robot_Custom():
-    def __init__(self):
+    def __init__(self, arduino):
+        self.arduino = arduino
         self.m_global_location  = np.array((40, 0, 20))
         self.m_brain = 0
         
@@ -111,7 +110,18 @@ class Robot_Custom():
             return
         print(f"Set t{index} to {val}")
         
+    def Enter_Custom_Thetas(self, ):
         
+        t0 = int(input("Enter t0 : "))
+        t1 = int(input("Enter t1 : "))
+        t2 = int(input("Enter t2 : "))
+        t3 = int(input("Enter t3 : "))
+        t4 = int(input("Enter t4 : "))
+        
+        self.Set_Thetas(t0, t1, t2, t3, t4)
+        target_loc = np.matmul( Translation_Matrix(np.array((41,-3,7.15))) , Rotation_Matrix(Axis.I, 90) )
+        self.Pose(0, target_loc)
+           
     def Set_Thetas(self, t0, t1, t2, t3, t4):
         
         self.m_t0 = t0
@@ -126,16 +136,21 @@ class Robot_Custom():
         self.m_links[4].m_theta = t4#-90
         self.m_links[0].m_dh_param.m_theta = t0#
         self.m_links[1].m_dh_param.m_theta = t1#
-        self.m_links[2].m_dh_param.m_theta = t2
-        self.m_links[3].m_dh_param.m_theta = t3
+        self.m_links[2].m_dh_param.m_theta = t2-90
+        self.m_links[3].m_dh_param.m_theta = t3-90
         self.m_links[4].m_dh_param.m_theta = t4#-90
         return
+            
+    def Thetas_ToString(self):
+        msg = str(self.m_t0) + ", " + str(self.m_t1) + ", " + str(self.m_t2) + ", " + str(self.m_t3) + ", " + str(self.m_t4) + ", "
+        return msg
+
     def Clear_Links(self):
         self.m_links = []
         
     def Create_Links(self):
 
-        self.m_links.append( Link(Axis.Z, self.m_t0, np.array((0, 0, d0)),  DH_Param(self.m_t0, 0, 0, d0)))
+        self.m_links.append( Link(Axis.Z, self.m_t0, np.array((0, 0, d0)),  DH_Param(self.m_t0, 90, 0, d0)))
         self.m_links.append( Link(Axis.Y, self.m_t1, np.array((0, 0, d1)),  DH_Param(self.m_t1, 0, d1, 0)))
         self.m_links.append( Link(Axis.Y, self.m_t2, np.array((0, 0, d2)),  DH_Param(self.m_t2, 0, d2, 0)))
         self.m_links.append( Link(Axis.Y, self.m_t3, np.array((0, 0, d3 + d4)) ,  DH_Param(self.m_t3, 0, d3 + d4, 0)))
@@ -162,28 +177,11 @@ class Robot_Custom():
      
     def Set_Brain(self, brain):
         self.m_brain = brain
-    def Pybotics_Model(self)-> npt.NDArray[np.float64]:
-        return np.array(
-            [
-                [0, 0, 0, d0],
-                [0, d1,  0, 0],
-                [0, d2,  0, 0],
-                [0, d3 + d4, 0, 0],
-                [0, 0, 0, 0]
-            ]
-        )
-
-    def Pose(self, orientation_matrix, location_matrix):
-        
-        target_location = np.array((location_matrix[0][3], location_matrix[1][3], location_matrix[2][3]))
-        
-        #Find angles for ik
-        ik_thetas = self.Solve_IK(location_matrix)
-        print(f"IK_Thetas : {ik_thetas}")
-        #Set thetas
-        self.Set_Thetas(ik_thetas[0]-180, ik_thetas[1]-90, ik_thetas[2]-90, ik_thetas[3]-90, ik_thetas[4])
-        #self.Set_Thetas(0, 90,90,90,0)
     
+    def Pose(self):
+        push_msg("Posing Robot started.")
+        
+       
         #Get DH Translation Matrix
         dh_mat = self.Robot_DH_Matrix()
         #Location of DH Translation
@@ -194,48 +192,49 @@ class Robot_Custom():
         #fk_end_effector_location = np.array((fk_end_effector[0][3], fk_end_effector[1][3], fk_end_effector[2][3]))
         #Print_Vector_String("fk_end_effector_location", fk_end_effector_location)
         
+        push_msg(f"Thetas : {self.m_t0}, {self.m_t1}, {self.m_t2}, {self.m_t3}, {self.m_t4}")
+       
+        #BRain
+        brain_rot_mat = self.m_brain.Brain_Rotation_Matrix()
+
+        brain_location_mat = Translation_Matrix(self.m_brain.m_global_location)
+        brain_location = np.array((brain_location_mat[0][3], brain_location_mat[1][3], brain_location_mat[2][3])) 
+        brain_loc = self.m_brain.m_global_location
+        #Target
+        target_brain_space = self.m_brain.m_target
+        target_brain_space_mat = Translation_Matrix(target_brain_space)
+        
+        target_location_mat = np.matmul(brain_rot_mat, target_brain_space_mat)
+        target_location = np.array((target_location_mat[0][3], target_location_mat[1][3], target_location_mat[2][3])) 
+        target_loc = target_location + brain_loc
+        target_error = target_loc - dh_fk_location
+        #Entry  
+        entry_brain_space = self.m_brain.m_entry
+        entry_brain_space_mat = Translation_Matrix(entry_brain_space)
+        
+        entry_location_mat = np.matmul(brain_rot_mat, entry_brain_space_mat)
+        entry_location = np.array((entry_location_mat[0][3], entry_location_mat[1][3], entry_location_mat[2][3])) 
+        entry_loc = entry_location + brain_loc
+        entry_error = entry_loc - dh_fk_location
+        
         #Find error
-        Print_Vector_String("target_location", target_location)
-        Print_Vector_String("dh_fk_location", dh_fk_location)
+        push_msg(Print_Vector_String("target_location", target_loc))
+        push_msg(Print_Vector_String("entry_location", entry_loc))
+        push_msg(Print_Vector_String("dh_fk_location", dh_fk_location))
+        push_msg(f"target_error : {target_error}")
+        push_msg(f"entry_error : {entry_error}")
         
-        error = dh_fk_location - target_location
-        print(error)
+        self.arduino.Write(self.Thetas_ToString())
         
-    def Solve_IK(self, translation):
-        np.set_printoptions(suppress=True)
-
-        ## modified DH parameters: alpha a theta d
-        ## types: revolute=1, prismatic=2 (not implemented yet)
+        push_msg("Posing Robot ended.")
         
-        np.set_printoptions(suppress=True)
-
-        robot = Robot.from_parameters(self.Pybotics_Model())
+       
         
-        joints = np.deg2rad([0,0,0,0,0])
-        dh_fk_mat = robot.fk(joints)
-        
-        print("dh_fk_mat : ")
-        print(dh_fk_mat)
-        
-        fk_dh_location = np.array((translation[0][3], translation[1][3], translation[2][3]))
-        print(f"fk_dh_location : {fk_dh_location}")
-        
-        solved_joints = robot.ik(translation)
-        print(f"solved_joints : {solved_joints}")
-
-        print("target_translation : ")
-        print(translation)
-        return np.rad2deg(solved_joints)
-    
-    def Pose_Brain():
+    def Pose_Brain(self):
         
         print("Posed Brain")
-        
-    def Thetas_ToString(self):
-        msg = str(self.m_t0) + ", " + str(self.m_t1) + ", " + str(self.m_t2) + ", " + str(self.m_t3) + ", " + str(self.m_t4) + ", "
-        return msg
-
-
+    
+    
 
 class Arduino_Controller():
     def __init__(self) -> None:
@@ -256,10 +255,10 @@ class Arduino_Controller():
     
     def Select_Port(self):    
         if self.fake:
-            print("Conncected to fake Arduino COMPORT")
+            print("\nConncected to fake Arduino COMPORT")
             return
 
-        print("Available COM Ports : ")
+        print("\nnAvailable COM Ports : ")
         for i in range(len(self.ports)):
             print(f"{i}. {self.ports[i]}")
             
@@ -275,125 +274,130 @@ class Arduino_Controller():
             
     def Write(self, msg):
         if self.fake:
-            print(f"Sent fake : {msg}")
+            print(f"\nSent fake : {msg}")
             return
         
         self.active_port.write(bytes(msg, 'utf-8'))
 
     def Read(self):
         if self.fake:
-            print(f"read fake msg")
+            print(f"\nread fake msg")
             return "fake_msg"
         
         data = self.active_port.readline()
         return data
 
-class Server():
-    def __init__(self):
-        self.IP = "127.0.0.1"
-        self.PORT = 7800
-        
-        self.server = None
-        self.robot = None
-        self.arduino = None
-        self.transport = None
-    async def run(self):
-        dispatcher = Dispatcher()
-        dispatcher.map("/robotsim/pose", self.pose_robot)
-        
-        self.server = AsyncIOOSCUDPServer((self.IP, self.PORT), dispatcher, asyncio.get_event_loop())
-        self.server
-        transport, protocol = await self.server.create_serve_endpoint()
-        print(f"OSC Server started.")
-        self.transport = transport
-        await self.listen_loop(600)
-        
-        transport.close()
-        print(f"OSC Server closed.")
-        
-    async def listen_loop(self, run_time):
-        for i in range(run_time):
-            #print(f"Loop {i}")
-          
-            await asyncio.sleep(1)
-            
-    def pose_robot(self, address, *args):
-        print(f"Got Pose Robot Command : ")
-        print(f"{address} : {args}")
-        if len(args) < 5:
-            print(f"Missing Robot Angles : Got {len(args)}, need 5!")
-            return
-        self.robot.Set_Thetas(args[0], args[1], args[2], args[3], args[4])
-        self.arduino.Write(self.robot.Thetas_ToString())
-    
-     
-    
 
-class Command():
-    def __init__(self, name, command):
-        self.name = name
-        self.command = command
+
+def default_handler(address, *args):
+    print(f"DEFAULT {address}: {args}")
+
+server_running = True
+server_msg_queue = []
+server_robot = None
+def run_server(robot, ip, port):
+    server_robot = robot
+    dispatcher = Dispatcher()
+    dispatcher.map("/robotsim/pose", pose_robot_serv)
+    dispatcher.set_default_handler(default_handler)
+    
+    server =  BlockingOSCUDPServer((ip, port), dispatcher)
+
+    server.serve_forever()
+    server_msg_queue.append("OSC Server started.")
+    
+    fs = 1
+    while server_running:
+        #do whatever
         
+        #server_msg_queue.append("OSC Server ticked (1).")
+        time.sleep(1)
+        
+    server.server_close()
+    server_msg_queue.append("OSC Server closed.")
+        
+def pose_robot_serv(address, *args):
+    server_msg_queue.append(f"Server : Pose Robot Command started.")
+    server_msg_queue.append(f"Addresss : {address}, args : {args}")
+    
+    if len(args) < 5:
+        server_msg_queue.append(f"Missing Robot Angles : Got {len(args)}, need 5!")
+        server_msg_queue.append("Server : Error")
+        return
+
+    server_robot.Set_Thetas(args[0], args[1], args[2], args[3], args[4])
+    
+    target_loc = np.matmul( Translation_Matrix(np.array((41,-3,7.15))) , Rotation_Matrix(Axis.I, 90) )
+    robot.Pose(0, target_loc)
+    
+    server_msg_queue.append("Server : Successfull Pose Robot Command")
+        
+def dump_server():
+    print(f"\nServer Dump : {len(server_msg_queue)}.")
+    count = 1
+    for msg in server_msg_queue:
+        print(f"{count} : {msg}")
+        count += 1
+    server_msg_queue.clear()
+    print(f"Server : Dump Complete.")
+    
+def push_msg(msg):
+    msg_queue.append(msg)
+    
+def dump_msgs():
+    print(f"\nMessage Dump : {len(msg_queue)}.")
+    count = 1
+    for msg in msg_queue:
+        print(f"{count} : {msg}")
+        count += 1
+    msg_queue.clear()
+
+
 if __name__ == "__main__":
     
+    print("\nWelcome to RADBI!\n")
     ac = Arduino_Controller()
     ac.Load_Ports()
     ac.Select_Port()
     
-   
     brain = Brain()
-    
-    target_brain_space = brain.m_target
-    target_brain_space_matrix = Translation_Matrix(target_brain_space)
-
-    brain_rotation = brain.Brain_Rotation_Matrix()
-
-    brain_location_robot_space_matrix = Translation_Matrix(brain.m_global_location)
-    
-    robot = Robot_Custom()
+ 
+    robot = Robot_Custom(ac)
     robot.Set_Brain(brain)
 
-    k_target_robot_space = brain_rotation * target_brain_space_matrix 
-
-    #robot.Set_Thetas(t0=0, t1=90, t2=90, t3=90, t4=0)
-    target_loc = np.matmul( Translation_Matrix(np.array((41,-3,7.15))) , Rotation_Matrix(Axis.I, 90) )
-    robot.Pose(0, target_loc)
+    robot.Set_Thetas(0,0,0,0,0)
+    server_robot = robot
+    server_thread = Thread(target=run_server, args=(robot, "127.0.0.1", 7800))
+    server_thread.start()
     
-    robot.Set_Thetas(0, 45, 45, 45, 45)
-    
-    # send to Arduino
-    server = Server()
-    server.robot = robot #will crash without
-    server.arduino = ac
-    asyncio.run(server.run())
-    
-    #CREATE ARDUINO MESSAGE
     run = True
-    while run:
-        
-        print(f"What do you want to do? : ")
-        commands = []
-        commands.append(Command("Calibrate Gyro", "calibrate"))
-        commands.append(Command("Pose Robot as PyRobot", robot.Thetas_ToString()))
-        commands.append(Command("Pose Robot as UE5", robot.Thetas_ToString()))
-        index = 1
-        for command in commands:
+    while run: #MAIN LOOP
+        if len(msg_queue) > 0:
+            dump_msgs()
+        if len(server_msg_queue) > 0:
+            dump_server()
             
-            print(f"{index}. {command.name}")
-            index += 1
+        print(f"\nWhat do you want to do? : ")
         
-        x = int(input("Choose command index : "))
-        if x < 0 or x > len(commands):
-            print("Not recongnized, exiting!")
-            server.transport.close()
-            exit()
+        print(f"1. Calibrate Gyro")
+        print(f"2. Pose Robot as Simulation")
+        print(f"3. Custom Robot Angles")
+        
+        x = int(input("\nChoose command index : "))
+        if x == 1:
+            ac.Write("calibrate")
+        elif x == 2:
+            robot.Pose()
+            ac.Write(robot.Thetas_ToString())
+        elif x == 3:
+            robot.Enter_Custom_Thetas()
+        else:
             break
-        
-        command = commands[x-1]
-        print(f"Sending : {command.name}!")
-        print(robot.Thetas_ToString())
-        ac.Write(command.command)
-        
+
         print(ac.Read())
-        
+    
+    server_running = False
+    closed = server_thread.join()
+    
+    print(f"\n\nClosed.")
     

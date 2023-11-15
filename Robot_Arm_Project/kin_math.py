@@ -92,5 +92,7 @@ def Translation_Matrix(vec):
 
 def Print_Vector_String(name, vector):
     print(f"{name} :")
-    print(f"x: {vector[0]:.1f}, y: {vector[1]:.1f}, z: {vector[2]:.1f}")
+    msg = f"x: {vector[0]:.1f}, y: {vector[1]:.1f}, z: {vector[2]:.1f}"
+    print(msg)
+    return msg
     
